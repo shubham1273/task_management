@@ -11,3 +11,12 @@ php artisan key:generate
 php artisan migrate
 npm install && npm run dev
 php artisan serve
+
+
+## Database Setup
+make a database name taskmanager
+locate taskmanager.sql file in the project  and import it
+use credentials
+
+email -> shubhamjaiswal1273@gmail.com
+password -> 123456789
