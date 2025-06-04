@@ -4,38 +4,34 @@ namespace App\Http\Controllers;
 
 use App\Models\Task;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth; // ✅ CORRECT location for importing
 
 class TaskController extends Controller
 {
     public function index(Request $request)
     {
-        // Get filters from request
         $status = $request->query('status');
         $priority = $request->query('priority');
-        $sort = $request->query('sort', 'due_date'); // Default sort
-        $order = $request->query('order', 'asc');    // Default order
+        $sort = $request->query('sort', 'due_date');
+        $order = $request->query('order', 'asc');
 
-        // Base query
-        $query = Task::query();
+        // ✅ Get tasks only for the logged-in user
+        $query = Task::where('user_id', Auth::id());
 
-        // Apply status filter
         if ($status && in_array($status, ['Pending', 'In Progress', 'Completed'])) {
             $query->where('status', $status);
         }
 
-        // Apply priority filter
         if ($priority && in_array($priority, ['Low', 'Medium', 'High'])) {
             $query->where('priority', $priority);
         }
 
-        // Apply sorting
         if (in_array($sort, ['due_date', 'priority'])) {
             $query->orderBy($sort, $order);
         } else {
             $query->orderBy('due_date', 'asc');
         }
 
-        // Pagination
         $tasks = $query->paginate(10)->withQueryString();
 
         return view('tasks.index', compact('tasks', 'status', 'priority', 'sort', 'order'));
@@ -56,7 +52,7 @@ class TaskController extends Controller
             'priority' => 'required|in:Low,Medium,High',
         ]);
 
-        $validated['user_id'] = auth()->id();
+        $validated['user_id'] = Auth::id(); // Or auth()->id()
 
         Task::create($validated);
 
@@ -82,9 +78,8 @@ class TaskController extends Controller
             'priority' => 'required|in:Low,Medium,High',
         ]);
 
-        // Mock logging when task status is marked as completed
         if ($validated['status'] === 'Completed' && $task->status !== 'Completed') {
-            \Log::info("Mock Email: Task '{$task->title}' marked as Completed by user ID " . auth()->id());
+            \Log::info("Mock Email: Task '{$task->title}' marked as Completed by user ID " . Auth::id());
         }
 
         $task->update($validated);
@@ -103,7 +98,7 @@ class TaskController extends Controller
 
     private function authorizeTask(Task $task)
     {
-        if ($task->user_id !== auth()->id()) {
+        if ($task->user_id !== Auth::id()) {
             abort(403, 'Unauthorized action.');
         }
     }
